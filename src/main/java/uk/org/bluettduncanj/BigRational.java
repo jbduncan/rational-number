@@ -243,10 +243,7 @@ public final class BigRational implements Comparable<BigRational> {
   }
 
   public static BigRational of(String value) {
-    String[] parts = value.split("/");
-    BigInteger num = new BigInteger(parts[0]);
-    BigInteger den = new BigInteger(parts[1]);
-    return of(num, den);
+    return null;
   }
 
 }
