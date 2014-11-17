@@ -1,26 +1,38 @@
+/*
+ *  Copyright 2014 Jonathan Bluett-Duncan
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package uk.org.bluettduncanj;
 
 import java.math.BigInteger;
 
 /**
- * An unlimited-size, <em>immutable</em> rational number (fraction) with an arbitrarily large numerator and
- * denominator.
+ * Unlimited-size rational number (fraction) with arbitrarily large numerator and denominator.
  *
- * <p>This class does not provide any constructors, instead it provides <em>static method factories</em> for
- * construction of {@code BigRational} instances.
- *   <ul>
- *     <li>{@link uk.org.bluettduncanj.BigRational#of(java.math.BigInteger)}</li>
- *     <li>{@link uk.org.bluettduncanj.BigRational#of(java.math.BigInteger, java.math.BigInteger)}</li>
- *     <li>{@link uk.org.bluettduncanj.BigRational#of(int)}</li>
- *     <li>{@link uk.org.bluettduncanj.BigRational#of(long)}</li>
- *     <li>{@link uk.org.bluettduncanj.BigRational#of(String)}</li>
- *   </ul>
- * </p>
+ * <p>This class does not provide any constructors, instead it provides <em>static method factories</em>. For example:
+ * <pre>
+ *   BigRational half = BigRational.of(1, 2);  // -> 1/2
+ *   BigRational twoThirds = BigRational.of(
+ *       BigInteger.valueOf(2),
+ *       BigInteger.valueOf(3));               // -> 2/3
+ * </pre></p>
  *
- * <p>Unless explicitly stated otherwise, all methods in this class throw a {@code NullPointerException} when
- * a {@code null} value is passed to any of their parameters.</p>
+ * <p>Unless explicitly stated otherwise, all methods in this class throw a {@code NullPointerException} when passed a
+ * {@code null} value.</p>
  *
- * <p>This class is <em>thread-safe</em>.</p>
+ * <p>{@code BigRational}s are <em>thread-safe</em> and <em>immutable</em>.</p>
  */
 public final class BigRational implements Comparable<BigRational> {
 
@@ -43,10 +55,20 @@ public final class BigRational implements Comparable<BigRational> {
     BigInteger den = safeInstance(
         checkNotNull(denominator, "denominator is null"));
 
+    if (den.equals(BigInteger.ZERO)) {
+      throw new IllegalArgumentException("denominator is zero");
+    }
+
     // Reduce the fraction to prevent excessive memory usage
     BigInteger gcd = num.gcd(den);
     num = num.divide(gcd);
     den = num.divide(gcd);
+
+    // Ensure the denominator is always positive
+    if (den.signum() < 0) {
+      num = num.negate();
+      den = den.negate();
+    }
 
     this.numerator = num;
     this.denominator = den;
@@ -111,7 +133,8 @@ public final class BigRational implements Comparable<BigRational> {
       return false;
     }
     BigRational rational = (BigRational) o;
-    return numerator.equals(rational.numerator) && denominator.equals(rational.denominator);
+    return numerator.equals(rational.numerator)
+        && denominator.equals(rational.denominator);
   }
 
   /**
@@ -159,7 +182,7 @@ public final class BigRational implements Comparable<BigRational> {
    * {@code "num/den"}, where {@code num} is the numerator represented as a sequence of decimal digits, and
    * {@code den} is the denominator also represented as a sequence of decimal digits. For example, {@code "1/2"},
    * {@code "-1/2"} and {@code "34/567"} are valid string representations of possible {@code BigRational} numbers,
-   * but {@code "1/-2"} and {@code "-1/-2"} are not.
+   * but {@code "1.5/2.3"}, {@code "1/-2"} and {@code "-1/-2"} are not.
    *
    * <p>(This representation is compatible with the {@link BigRational#of(String)} <em>static
    * factory method</em>, and allows for String concatenation with Java's {@code +} operator.)</p>
@@ -212,13 +235,11 @@ public final class BigRational implements Comparable<BigRational> {
    * @return
    */
   public static BigRational of(long number) {
-    return of(BigInteger.valueOf(number), BigInteger.ONE);
+    return of(BigInteger.valueOf(number));
   }
 
   public static BigRational of(long numerator, long denominator) {
-    return of(
-        BigInteger.valueOf(numerator),
-        BigInteger.valueOf(denominator));
+    return of(BigInteger.valueOf(numerator), BigInteger.valueOf(denominator));
   }
 
   public static BigRational of(String value) {
