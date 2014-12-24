@@ -1,11 +1,17 @@
 package uk.org.bluettduncanj;
 
 import java.math.BigInteger;
+import java.util.Objects;
+import java.util.Optional;
+
+import static java.util.Objects.requireNonNull;
 
 /**
- * Unlimited-size rational number (fraction) with arbitrarily large numerator and denominator.
+ * Unlimited-size rational number (fraction) with arbitrarily large numerator
+ * and denominator.
  *
- * <p>This class does not provide any constructors, instead it provides <em>static method factories</em>. For example:
+ * <p>This class does not provide any constructors, instead it provides
+ * <em>static method factories</em>. For example:
  * <pre>
  *   BigRational half = BigRational.of(1, 2);  // -> 1/2
  *   BigRational twoThirds = BigRational.of(
@@ -13,36 +19,35 @@ import java.math.BigInteger;
  *       BigInteger.valueOf(3));               // -> 2/3
  * </pre></p>
  *
- * <p>Unless explicitly stated otherwise, all methods in this class throw {@code NullPointerException} when passed a
- * {@code null} value.</p>
+ * <p>Unless explicitly stated otherwise, all methods in this class throw
+ * {@code NullPointerException} when passed a {@code null} value.</p>
  *
  * <p>{@code BigRational}s are <em>thread-safe</em> and <em>immutable</em>.</p>
  */
 public final class BigRational implements Comparable<BigRational> {
 
-  /**
-   * The numerator of {@code this}. Must be non-null.
-   */
+  /** The numerator of {@code this}. Must be non-null. */
   private final BigInteger numerator;
 
-  /**
-   * The denominator of {@code this}. Must be non-null.
-   */
+  /** The denominator of {@code this}. Must be non-null. */
   private final BigInteger denominator;
 
   /**
-   * Private constructor of {@code BigRational} instances; prevents instantiation by client.
+   * Private constructor of {@code BigRational} instances; prevents
+   * instantiation by client.
    *
    * <p>
-   *   {@code BigRational} instances are <em>normalised</em>. This means the following things
-   *   happen when they are created:
+   *   {@code BigRational} instances are <em>normalised</em>. This means the
+   *   following things happen with their passed-in numerators and denominators
+   *   when created:
    *   <ul>
    *     <li>
-   *       Their numerators and denominators are made to be as small as possible,
-   *       e.g. {@code "2/4"} becomes {@code "1/2"}.
+   *       Their numerators and denominators are made to be as small as
+   *       possible, e.g. {@code "2/4"} becomes {@code "1/2"}.
    *     </li>
-   *     <li>If {@code denominator < 0}, then the sign values of {@code numerator} and
-   *     {@code denominator} are inverted, e.g. {@code "1/-2"} becomes {@code "-1/2"}.</li>
+   *     <li>If {@code denominator < 0}, then the sign values of
+   *     {@code numerator} and {@code denominator} are inverted, e.g.
+   *     {@code "1/-2"} becomes {@code "-1/2"}.</li>
    *   </ul>
    * </p>
    *
@@ -50,8 +55,10 @@ public final class BigRational implements Comparable<BigRational> {
    * @param denominator the denominator
    */
   private BigRational(BigInteger numerator, BigInteger denominator) {
-    BigInteger num = safeInstance(checkNotNull(numerator, "numerator is null"));
-    BigInteger den = safeInstance(checkNotNull(denominator, "denominator is null"));
+    BigInteger num = safeInstance(
+        requireNonNull(numerator, "numerator is null"));
+    BigInteger den = safeInstance(
+        requireNonNull(denominator, "denominator is null"));
 
     if (den.equals(BigInteger.ZERO)) {
       throw new IllegalArgumentException("denominator is zero");
@@ -70,23 +77,6 @@ public final class BigRational implements Comparable<BigRational> {
 
     this.numerator = num;
     this.denominator = den;
-  }
-
-  /**
-   * Checks that the given {@code object} is not {@code null}; otherwise throws a {@code NullPointerException} with
-   * the given {@code errorMessage}.
-   *
-   * @param object       the object to check
-   * @param errorMessage the message to pass to the {@code NullPointerException} if {@code object} is {@code null}; may
-   *                     be {@code null} itself
-   * @param <T>          the type of {@code object}
-   * @return {@code object}
-   */
-  private static <T> T checkNotNull(T object, String errorMessage) {
-    if (object == null) {
-      throw new NullPointerException(errorMessage);
-    }
-    return object;
   }
 
   /**
@@ -148,8 +138,7 @@ public final class BigRational implements Comparable<BigRational> {
    * is less than, equal to, or greater than the specified object.
    * @throws NullPointerException if the specified object is {@code null}.
    */
-  @Override
-  public int compareTo(BigRational val) {
+  @Override public int compareTo(BigRational val) {
     return denominator.compareTo(val.denominator) == 0
         ? numerator.compareTo(val.numerator)
         : compareWithUnequalDenominators(val);
@@ -168,8 +157,7 @@ public final class BigRational implements Comparable<BigRational> {
    * @param o
    * @return
    */
-  @Override
-  public boolean equals(Object o) {
+  @Override public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
@@ -182,14 +170,11 @@ public final class BigRational implements Comparable<BigRational> {
   }
 
   /**
+   *
    * @return
    */
-  @Override
-  public int hashCode() {
-    int result = 17;
-    result = 31 * result + numerator.hashCode();
-    result = 31 * result + denominator.hashCode();
-    return result;
+  @Override public int hashCode() {
+    return Objects.hash(numerator, denominator);
   }
 
   /**
@@ -213,8 +198,7 @@ public final class BigRational implements Comparable<BigRational> {
    *
    * @return the string representation of {@code this}.
    */
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return denominator.equals(BigInteger.ONE)
         ? numerator.toString()
         : numerator.toString() + "/" + denominator.toString();
