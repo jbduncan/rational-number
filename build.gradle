@@ -11,6 +11,7 @@ repositories {
 }
 
 dependencies {
+    compile 'net.jcip:jcip-annotations:1.0'
     testCompile 'junit:junit:4.11'
 }
 

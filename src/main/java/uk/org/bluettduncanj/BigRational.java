@@ -1,14 +1,14 @@
 package uk.org.bluettduncanj;
 
+import net.jcip.annotations.Immutable;
+
 import java.math.BigInteger;
 import java.util.Objects;
-import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Unlimited-size rational number (fraction) with arbitrarily large numerator
- * and denominator.
+ * Unlimited-size rational number (or fraction).
  *
  * <p>This class does not provide any constructors, instead it provides
  * <em>static method factories</em>. For example:
@@ -24,6 +24,7 @@ import static java.util.Objects.requireNonNull;
  *
  * <p>{@code BigRational}s are <em>thread-safe</em> and <em>immutable</em>.</p>
  */
+@Immutable
 public final class BigRational implements Comparable<BigRational> {
 
   /** The numerator of {@code this}. Must be non-null. */
@@ -51,7 +52,7 @@ public final class BigRational implements Comparable<BigRational> {
    *   </ul>
    * </p>
    *
-   * @param numerator   the numerator
+   * @param numerator the numerator
    * @param denominator the denominator
    */
   private BigRational(BigInteger numerator, BigInteger denominator) {
@@ -80,22 +81,67 @@ public final class BigRational implements Comparable<BigRational> {
   }
 
   /**
-   * Defensively copies a new {@code BigInteger} if {@code val} is an untrusted subclass of {@code BigInteger},
-   * otherwise returns {@code val}.
+   * Compares two BigRational objects, {@code this} and {@code that}, which
+   * have unequal denominators.
    *
-   * <p>The purpose of this method is to guard against client code attacks which attempt to pass an instance of an
-   * subclass of {@code BigInteger} whose members may violate the invariants of {@code BigInteger}. This is required
-   * because this class depends on {@code BigInteger} being immutable to properly function.</p>
-   *
-   * @param val the instance to check.
-   * @return a {@code BigInteger} copy of {@code val} if its class is not {@code BigInteger}, otherwise {@code val}
-   * itself.
+   * @param that The object to compare against {@code this}.
+   * @return a negative integer, zero, or a positive integer as {@code this} is
+   * less than, equal to, or greater than {@code that}.
    */
-  private static BigInteger safeInstance(BigInteger val) {
-    if (val.getClass() != BigInteger.class) {
-      return new BigInteger(val.toByteArray());
+  private int compareWithUnequalDenominators(BigRational that) {
+    // Use cross-multiplication
+    BigInteger numThis = numerator.multiply(that.denominator);
+    BigInteger numThat = that.numerator.multiply(denominator);
+    return numThis.compareTo(numThat);
+  }
+
+  /**
+   * @param val the object to be compared.
+   * @return a negative integer, zero, or a positive integer as this object
+   * is less than, equal to, or greater than the specified object.
+   * @throws NullPointerException if the specified object is {@code null}.
+   */
+  @Override
+  public int compareTo(BigRational val) {
+    return denominator.compareTo(val.denominator) == 0
+        ? numerator.compareTo(val.numerator)
+        : compareWithUnequalDenominators(val);
+  }
+
+  /**
+   * Returns the denominator of this {@code BigRational} number.
+   *
+   * @return the denominator of {@code this}.
+   */
+  public BigInteger denominator() {
+    return denominator;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-    return val;
+    if (!(o instanceof BigRational)) {
+      return false;
+    }
+    BigRational rational = (BigRational) o;
+    return numerator.equals(rational.numerator)
+        && denominator.equals(rational.denominator);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(numerator, denominator);
+  }
+
+  /**
+   * Returns the numerator of this {@code BigRational} number.
+   *
+   * @return the numerator of {@code this}.
+   */
+  public BigInteger numerator() {
+    return numerator;
   }
 
   public static BigRational of(BigInteger number) {
@@ -119,86 +165,44 @@ public final class BigRational implements Comparable<BigRational> {
   }
 
   /**
-   * Compares two BigRational objects, {@code this} and {@code that}, which have unequal denominators.
+   * Defensively copies a new {@code BigInteger} if {@code val} is an untrusted
+   * subclass of {@code BigInteger}, otherwise returns {@code val}.
    *
-   * @param that The object to compare against {@code this}.
-   * @return a negative integer, zero, or a positive integer as {@code this} is less than, equal to, or greater than
-   * {@code that}.
-   */
-  private int compareWithUnequalDenominators(BigRational that) {
-    // Use cross-multiplication
-    BigInteger numThis = numerator.multiply(that.denominator);
-    BigInteger numThat = that.numerator.multiply(denominator);
-    return numThis.compareTo(numThat);
-  }
-
-  /**
-   * @param val the object to be compared.
-   * @return a negative integer, zero, or a positive integer as this object
-   * is less than, equal to, or greater than the specified object.
-   * @throws NullPointerException if the specified object is {@code null}.
-   */
-  @Override public int compareTo(BigRational val) {
-    return denominator.compareTo(val.denominator) == 0
-        ? numerator.compareTo(val.numerator)
-        : compareWithUnequalDenominators(val);
-  }
-
-  /**
-   * Returns the denominator of this {@code BigRational} number.
+   * <p>The purpose of this method is to guard against client code attacks
+   * which attempt to pass an instance of an subclass of {@code BigInteger}
+   * whose members violate the invariants of {@code BigInteger}. This is
+   * required because this class depends on {@code BigInteger} being immutable
+   * to properly function.</p>
    *
-   * @return the denominator of {@code this}.
+   * @param val the instance to check.
+   * @return a {@code BigInteger} copy of {@code val} if its class is not
+   * {@code BigInteger}, otherwise {@code val}
+   * itself.
    */
-  public BigInteger denominator() {
-    return denominator;
-  }
-
-  /**
-   * @param o
-   * @return
-   */
-  @Override public boolean equals(Object o) {
-    if (this == o) {
-      return true;
+  private static BigInteger safeInstance(BigInteger val) {
+    if (val.getClass() != BigInteger.class) {
+      return new BigInteger(val.toByteArray());
     }
-    if (!(o instanceof BigRational)) {
-      return false;
-    }
-    BigRational rational = (BigRational) o;
-    return numerator.equals(rational.numerator)
-        && denominator.equals(rational.denominator);
+    return val;
   }
 
   /**
+   * Returns the decimal {@code String} representation of this
+   * {@code BigRational} number. The string is of the format {@code "num/den"},
+   * where {@code num} is the numerator represented as a sequence of decimal
+   * digits, and {@code den} is the denominator also represented as a sequence
+   * of decimal digits. For example, {@code "1/2"}, {@code "-1/2"} and
+   * {@code "34/567"} are valid string representations of possible
+   * {@code BigRational} numbers, but {@code "1.5/2.3"}, {@code "1/-2"} and
+   * {@code "-1/-2"} are not.
    *
-   * @return
-   */
-  @Override public int hashCode() {
-    return Objects.hash(numerator, denominator);
-  }
-
-  /**
-   * Returns the numerator of this {@code BigRational} number.
-   *
-   * @return the numerator of {@code this}.
-   */
-  public BigInteger numerator() {
-    return numerator;
-  }
-
-  /**
-   * Returns the decimal {@code String} representation of this {@code BigRational} number. The string is of the format
-   * {@code "num/den"}, where {@code num} is the numerator represented as a sequence of decimal digits, and
-   * {@code den} is the denominator also represented as a sequence of decimal digits. For example, {@code "1/2"},
-   * {@code "-1/2"} and {@code "34/567"} are valid string representations of possible {@code BigRational} numbers,
-   * but {@code "1.5/2.3"}, {@code "1/-2"} and {@code "-1/-2"} are not.
-   *
-   * <p>(This representation is compatible with the {@link BigRational#of(String)} <em>static
-   * factory method</em>, and allows for String concatenation with Java's {@code +} operator.)</p>
+   * <p>(This representation is compatible with the
+   * {@link BigRational#of(String)} <em>static factory method</em>.)</p>
    *
    * @return the string representation of {@code this}.
    */
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return denominator.equals(BigInteger.ONE)
         ? numerator.toString()
         : numerator.toString() + "/" + denominator.toString();

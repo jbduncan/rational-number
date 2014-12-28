@@ -19,39 +19,33 @@ public class BigRationalTest {
     }
   }
 
-  @Test public void testCompareTo() throws Exception {
+  @Test
+  public void testCompareTo() throws Exception {
     fail("Not yet implemented.");
   }
 
-  @Test public void testDenominator() throws Exception {
+  @Test
+  public void testDenominator() throws Exception {
     BigRational tenth = BigRational.of(BigInteger.ONE, BigInteger.TEN);
     assertEquals("Denominator has mutated", BigInteger.TEN,
         tenth.denominator());
   }
 
-  @Test public void testEquals() throws Exception {
+  @Test
+  public void testEquals() throws Exception {
     BigRational half = BigRational.of(1, 2);
     BigRational twoQuarters = BigRational.of(2, 4);
     BigRational threeSixths = BigRational.of(3, 6);
     BigRational eightFifths = BigRational.of(8, 5);
 
-    // Test non-nullity of equals()
-    @SuppressWarnings("ObjectEqualsNull") boolean equalToNull =
-        half.equals(null);
-    assertFalse("Equal to null", equalToNull);
-
     // Test reflexivity of equals()
-    @SuppressWarnings("EqualsWithItself") boolean equalToItself =
-        half.equals(half);
-    assertTrue("Not equal to itself", equalToItself);
+    assertEquals("Not equal to itself", half, half);
 
-    // Test consistency of equals()
-    for (int i = 0; i < 100; i++) {
-      assertTrue("Not consistent", half.equals(twoQuarters));
-    }
-    for (int i = 0; i < 100; i++) {
-      assertFalse("Not consistent", eightFifths.equals(half));
-    }
+    // Test non-nullity of equals()
+    assertNotEquals("Equal to null", half, null);
+    assertNotEquals("Equal to null", twoQuarters, null);
+    assertNotEquals("Equal to null", threeSixths, null);
+    assertNotEquals("Equal to null", eightFifths, null);
 
     // Test symmetry of equals()
     assertTrue("Not symmetric", half.equals(twoQuarters)
@@ -61,9 +55,18 @@ public class BigRationalTest {
     assertTrue("Not transitive", half.equals(twoQuarters)
         && twoQuarters.equals(threeSixths)
         && half.equals(threeSixths));
+
+    // Test consistency of equals()
+    for (int i = 0; i < 100; i++) {
+      assertEquals("Not consistent", half, twoQuarters);
+    }
+    for (int i = 0; i < 100; i++) {
+      assertNotEquals("Not consistent", eightFifths, half);
+    }
   }
 
-  @Test public void testHashCode() throws Exception {
+  @Test
+  public void testHashCode() throws Exception {
     BigRational half = BigRational.of(1, 2);
     BigRational twoQuarters = BigRational.of(2, 4);
 
@@ -73,16 +76,19 @@ public class BigRationalTest {
         half.hashCode() == twoQuarters.hashCode());
   }
 
-  @Test public void testNumerator() throws Exception {
+  @Test
+  public void testNumerator() throws Exception {
     BigRational tenth = BigRational.of(BigInteger.ONE, BigInteger.TEN);
     assertEquals("Numerator has mutated", BigInteger.ONE, tenth.numerator());
   }
 
-  @Test public void testToString() throws Exception {
+  @Test
+  public void testToString() throws Exception {
     fail("Not yet implemented.");
   }
 
-  @Test public void testOf() throws Exception {
+  @Test
+  public void testOf() throws Exception {
     fail("Not yet implemented.");
 
     final BigIntegerImpostor impostorInteger = new BigIntegerImpostor("1");
@@ -92,7 +98,8 @@ public class BigRationalTest {
         numeratorClass.equals(BigInteger.class));
   }
 
-  @Test public void testOf1() throws Exception {
+  @Test
+  public void testOf1() throws Exception {
     fail("Not yet implemented.");
 
     final BigIntegerImpostor impostorInteger = new BigIntegerImpostor("1");
@@ -105,15 +112,18 @@ public class BigRationalTest {
             && denominatorClass.equals(BigInteger.class));
   }
 
-  @Test public void testOf2() throws Exception {
+  @Test
+  public void testOf2() throws Exception {
     fail("Not yet implemented.");
   }
 
-  @Test public void testOf3() throws Exception {
+  @Test
+  public void testOf3() throws Exception {
     fail("Not yet implemented.");
   }
 
-  @Test public void testOf4() throws Exception {
+  @Test
+  public void testOf4() throws Exception {
     fail("Not yet implemented.");
   }
 
