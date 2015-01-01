@@ -2,6 +2,7 @@ package uk.org.bluettduncanj;
 
 import net.jcip.annotations.Immutable;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Objects;
 
@@ -11,13 +12,13 @@ import static java.util.Objects.requireNonNull;
  * <p>Unlimited-size rational number (or fraction).</p>
  *
  * <p>This class does not provide any constructors, instead it provides
- * <em>static factory methods</em>. For example:
+ * <em>static factory methods</em>. For example:</p>
  * <pre>
- *   BigRational half = BigRational.of(1, 2);  // -> 1/2
+ *   BigRational half = BigRational.of(1, 2);  {@literal // -> 1/2}
  *   BigRational twoThirds = BigRational.of(
  *       BigInteger.valueOf(2),
- *       BigInteger.valueOf(3));               // -> 2/3
- * </pre></p>
+ *       BigInteger.valueOf(3));               {@literal // -> 2/3}
+ * </pre>
  *
  * <p>Unless said otherwise, all methods in this class throw
  * {@code NullPointerException} when passed a {@code null} value.</p>
