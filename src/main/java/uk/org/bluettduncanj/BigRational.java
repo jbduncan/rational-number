@@ -2,6 +2,8 @@ package uk.org.bluettduncanj;
 
 import net.jcip.annotations.Immutable;
 
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Objects;
@@ -26,13 +28,33 @@ import static java.util.Objects.requireNonNull;
  * <p>{@code BigRational}s are <em>thread-safe</em> and <em>immutable</em>.</p>
  */
 @Immutable
-public final class BigRational implements Comparable<BigRational> {
+public final class BigRational extends Number
+    implements Comparable<BigRational> {
 
   /** The numerator of {@code this}. Must be non-null. */
   private final BigInteger numerator;
 
   /** The denominator of {@code this}. Must be non-null. */
   private final BigInteger denominator;
+
+  /**
+   * A proxy class designed to have instances of itself
+   * serialized in place of BigRational.
+   */
+  private static class SerializationProxy implements Serializable {
+    private static final long serialVersionUID = 2837712364721L;
+    private final BigInteger numerator;
+    private final BigInteger denominator;
+
+    SerializationProxy(BigRational value) {
+      this.numerator = value.numerator;
+      this.denominator = value.denominator;
+    }
+
+    private Object readResolve() {
+      return BigRational.of(numerator, denominator);
+    }
+  }
 
   /**
    * Private constructor of {@code BigRational} instances; prevents
@@ -57,12 +79,12 @@ public final class BigRational implements Comparable<BigRational> {
    */
   private BigRational(BigInteger numerator, BigInteger denominator) {
     BigInteger num = safeInstance(
-        requireNonNull(numerator, "numerator is null"));
+        requireNonNull(numerator, "Numerator is null"));
     BigInteger den = safeInstance(
-        requireNonNull(denominator, "denominator is null"));
+        requireNonNull(denominator, "Denominator is null"));
 
     if (den.equals(BigInteger.ZERO)) {
-      throw new IllegalArgumentException("denominator is zero");
+      throw new IllegalArgumentException("Denominator is zero");
     }
 
     // Reduce the rational to prevent excessive memory usage
@@ -169,6 +191,11 @@ public final class BigRational implements Comparable<BigRational> {
     return null;
   }
 
+  private void readObject(ObjectInputStream stream)
+      throws InvalidObjectException {
+    throw new InvalidObjectException("Proxy required");
+  }
+
   /**
    * Defensively copies a new {@code BigInteger} if {@code val} is an untrusted
    * subclass of {@code BigInteger}, otherwise returns {@code val}.
@@ -214,4 +241,78 @@ public final class BigRational implements Comparable<BigRational> {
         : numerator.toString() + "/" + denominator.toString();
   }
 
+  /**
+   * Returns the value of the specified number as an {@code int},
+   * which may involve rounding or truncation.
+   *
+   * @return the numeric value represented by this object after conversion
+   * to type {@code int}
+   */
+  @Override
+  public int intValue() {
+    return 0;
+  }
+
+  /**
+   * Returns the value of the specified number as a {@code long},
+   * which may involve rounding or truncation.
+   *
+   * @return the numeric value represented by this object after conversion
+   * to type {@code long}
+   */
+  @Override
+  public long longValue() {
+    return 0;
+  }
+
+  /**
+   * Returns the value of the specified number as a {@code float},
+   * which may involve rounding.
+   *
+   * @return the numeric value represented by this object after conversion
+   * to type {@code float}
+   */
+  @Override
+  public float floatValue() {
+    return 0;
+  }
+
+  /**
+   * Returns the value of the specified number as a {@code double},
+   * which may involve rounding.
+   *
+   * @return the numeric value represented by this object after conversion
+   * to type {@code double}
+   */
+  @Override
+  public double doubleValue() {
+    return 0;
+  }
+
+  /**
+   * Returns the value of the specified number as a {@code byte},
+   * which may involve rounding or truncation.
+   *
+   * @return the numeric value represented by this object after conversion
+   * to type {@code byte}
+   */
+  @Override
+  public byte byteValue() {
+    return 0;
+  }
+
+  /**
+   * Returns the value of the specified number as a {@code short},
+   * which may involve rounding or truncation.
+   *
+   * @return the numeric value represented by this object after conversion
+   * to type {@code short}
+   */
+  public short shortValue() {
+    return 0;
+  }
+
+  private Object writeReplace() {
+    return new SerializationProxy(this);
+  }
 }
