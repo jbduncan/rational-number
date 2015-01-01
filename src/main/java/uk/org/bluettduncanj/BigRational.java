@@ -5,6 +5,7 @@ import net.jcip.annotations.Immutable;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Objects;
 
@@ -22,14 +23,17 @@ import static java.util.Objects.requireNonNull;
  *       BigInteger.valueOf(3));               {@literal // -> 2/3}
  * </pre>
  *
+ * <p>This class automatically simplifies</p>
+ *
  * <p>Unless said otherwise, all methods in this class throw
  * {@code NullPointerException} when passed a {@code null} value.</p>
  *
- * <p>{@code BigRational}s are <em>thread-safe</em> and <em>immutable</em>.</p>
+ * <p>{@code BigRational} objects are <em>thread-safe</em> and
+ * <em>immutable</em>.</p>
  */
 @Immutable
 public final class BigRational extends Number
-    implements Comparable<BigRational> {
+    implements Comparable<BigRational>, Serializable {
 
   /** The numerator of {@code this}. Must be non-null. */
   private final BigInteger numerator;
@@ -38,7 +42,7 @@ public final class BigRational extends Number
   private final BigInteger denominator;
 
   /**
-   * A proxy class designed to have instances of itself
+   * A proxy class whose instances are to be
    * serialized in place of BigRational.
    */
   private static class SerializationProxy implements Serializable {
@@ -76,6 +80,7 @@ public final class BigRational extends Number
    *
    * @param numerator the numerator
    * @param denominator the denominator
+   * @throws IllegalArgumentException if {@code denominator} is zero.
    */
   private BigRational(BigInteger numerator, BigInteger denominator) {
     BigInteger num = safeInstance(
@@ -167,6 +172,10 @@ public final class BigRational extends Number
    */
   public BigInteger numerator() {
     return numerator;
+  }
+
+  public static BigRational of(BigDecimal value) {
+    return null;
   }
 
   public static BigRational of(BigInteger value) {
@@ -308,8 +317,31 @@ public final class BigRational extends Number
    * @return the numeric value represented by this object after conversion
    * to type {@code short}
    */
+  @Override
   public short shortValue() {
     return 0;
+  }
+
+  /**
+   * Returns the value of the specified number as a {@code BigInteger},
+   * which may involve rounding or truncation.
+   *
+   * @return the numeric value represented by this object after conversion
+   * to type {@code BigInteger}
+   */
+  public BigInteger bigIntegerValue() {
+    return BigInteger.ZERO;
+  }
+
+  /**
+   * Returns the value of the specified number as a {@code BigDecimal},
+   * which may involve rounding or truncation.
+   *
+   * @return the numeric value represented by this object after conversion
+   * to type {@code BigDecimal}
+   */
+  public BigDecimal bigDecimalValue() {
+    return BigDecimal.ZERO;
   }
 
   private Object writeReplace() {
