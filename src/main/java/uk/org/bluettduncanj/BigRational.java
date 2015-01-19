@@ -14,22 +14,45 @@ import static java.util.Objects.requireNonNull;
 /**
  * <p>Unlimited-size rational number (or fraction).</p>
  *
- * <p>This class does not provide any constructors, instead it provides
- * <em>static factory methods</em>. For example:</p>
+ * <p>This class does not have any public constructors, instead it uses
+ * static factory methods. For example:</p>
  * <pre>
- *   BigRational half = BigRational.of(1, 2);  {@literal // -> 1/2}
- *   BigRational twoThirds = BigRational.of(
+ *   BigRational half = BigRational.valueOf(1, 2);  {@literal // -> 1/2}
+ *   BigRational twoThirds = BigRational.valueOf(
  *       BigInteger.valueOf(2),
- *       BigInteger.valueOf(3));               {@literal // -> 2/3}
+ *       BigInteger.valueOf(3));                    {@literal // -> 2/3}
  * </pre>
  *
- * <p>This class automatically simplifies</p>
+ * <p>{@code BigRational} objects automatically simplify their
+ * numerators and denominators when created. This means that:
+ * <ul>
+ *   <li>If {@code (denominator &lt; 0)} then
+ *   {@code (numerator = -numerator)} and
+ *   {@code (denominator = -denominator)}.</li>
+ *   <li>{@code numerator} and {@code denominator} are reduced
+ *   as much as possible, e.g. {@code 2/4 -> 1/2}.</li>
+ * </ul></p>
  *
  * <p>Unless said otherwise, all methods in this class throw
  * {@code NullPointerException} when passed a {@code null} value.</p>
  *
- * <p>{@code BigRational} objects are <em>thread-safe</em> and
- * <em>immutable</em>.</p>
+ * <p>{@code BigRational} objects are <strong>immutable</strong> and
+ * <strong>thread-safe</strong>. This means all methods on this class
+ * which return {@code BigRational} create new instances, which makes
+ * the following code usage incorrect.</p>
+ *
+ * <pre>
+ *   BigRational rational = BigRational.valueOf(1, 2);
+ *   rational.add(BigRational.valueOf(1, 5));  // Don't do this!
+ *   System.out.println(rational);             // -> 1/2
+ * </pre>
+ *
+ * <p>To achieve the effect you probably meant, do the following instead.</p>
+ * <pre>
+ *   BigRational rational = BigRational.valueOf(1, 2);
+ *   rational = rational.add(BigRational.valueOf(1, 5));  // Correct!
+ *   System.out.println(rational);                        // -> 7/10
+ * </pre>
  */
 @Immutable
 public final class BigRational extends Number
@@ -42,45 +65,12 @@ public final class BigRational extends Number
   private final BigInteger denominator;
 
   /**
-   * A proxy class whose instances are to be
-   * serialized in place of BigRational.
-   */
-  private static class SerializationProxy implements Serializable {
-    private static final long serialVersionUID = 2837712364721L;
-    private final BigInteger numerator;
-    private final BigInteger denominator;
-
-    SerializationProxy(BigRational value) {
-      this.numerator = value.numerator;
-      this.denominator = value.denominator;
-    }
-
-    private Object readResolve() {
-      return BigRational.of(numerator, denominator);
-    }
-  }
-
-  /**
    * Private constructor of {@code BigRational} instances; prevents
    * instantiation by client.
    *
-   * <p>
-   *   {@code BigRational} instances are <em>normalised</em>. This means the
-   *   following things happen when they're created:
-   *   <ul>
-   *     <li>
-   *       Their numerators and denominators are made to be as small as
-   *       possible, e.g. {@code "2/4"} becomes {@code "1/2"}.
-   *     </li>
-   *     <li>If {@code denominator < 0}, then the sign values of
-   *     {@code numerator} and {@code denominator} are inverted, e.g.
-   *     {@code "1/-2"} becomes {@code "-1/2"}.</li>
-   *   </ul>
-   * </p>
-   *
    * @param numerator the numerator
    * @param denominator the denominator
-   * @throws IllegalArgumentException if {@code denominator} is zero.
+   * @throws IllegalArgumentException if {@code denominator == 0}.
    */
   private BigRational(BigInteger numerator, BigInteger denominator) {
     BigInteger num = safeInstance(
@@ -129,7 +119,7 @@ public final class BigRational extends Number
    * @param value the object to be compared
    * @return a negative integer, zero, or a positive integer as this object
    * is less than, equal to, or greater than the specified object
-   * @throws NullPointerException if the specified object is {@code null}
+   * @throws NullPointerException if {@code value == null}
    */
   @Override
   public int compareTo(BigRational value) {
@@ -174,29 +164,28 @@ public final class BigRational extends Number
     return numerator;
   }
 
-  public static BigRational of(BigDecimal value) {
+  public static BigRational valueOf(BigDecimal value) {
     return null;
   }
 
-  public static BigRational of(BigInteger value) {
-    return of(value, BigInteger.ONE);
+  public static BigRational valueOf(BigInteger value) {
+    return valueOf(value, BigInteger.ONE);
   }
 
-  public static BigRational of(BigInteger numerator, BigInteger denominator) {
+  public static BigRational valueOf(BigInteger numerator, BigInteger denominator) {
     return new BigRational(numerator, denominator);
   }
 
-  public static BigRational of(long value) {
-    return of(BigInteger.valueOf(value));
+  public static BigRational valueOf(long value) {
+    return valueOf(BigInteger.valueOf(value));
   }
 
-  public static BigRational of(long numerator, long denominator) {
-    return of(
-        BigInteger.valueOf(numerator),
-        BigInteger.valueOf(denominator));
+  public static BigRational valueOf(long numerator, long denominator) {
+    return valueOf(BigInteger.valueOf(numerator),
+                   BigInteger.valueOf(denominator));
   }
 
-  public static BigRational of(String value) {
+  public static BigRational valueOf(String value) {
     return null;
   }
 
@@ -239,7 +228,7 @@ public final class BigRational extends Number
    * {@code "-1/-2"} are not.</p>
    *
    * <p>This representation is compatible with the
-   * {@link BigRational#of(String)} <em>static factory method</em>.</p>
+   * {@link BigRational#valueOf(String)} <em>static factory method</em>.</p>
    *
    * @return the string representation of {@code this}
    */
@@ -346,5 +335,23 @@ public final class BigRational extends Number
 
   private Object writeReplace() {
     return new SerializationProxy(this);
+  }
+
+  /**
+   * A proxy class whose instances are serialized in place of BigRational.
+   */
+  private static class SerializationProxy implements Serializable {
+    private static final long serialVersionUID = 2837712364721L;
+    private final BigInteger numerator;
+    private final BigInteger denominator;
+
+    SerializationProxy(BigRational value) {
+      this.numerator = value.numerator;
+      this.denominator = value.denominator;
+    }
+
+    private Object readResolve() {
+      return BigRational.valueOf(numerator, denominator);
+    }
   }
 }
