@@ -1,4 +1,4 @@
-package uk.org.bluettduncanj;
+package uk.co.bluettduncanj;
 
 import net.jcip.annotations.Immutable;
 
@@ -37,9 +37,11 @@ import static java.util.Objects.requireNonNull;
  * {@code NullPointerException} when passed a {@code null} value.</p>
  *
  * <p>{@code BigRational} objects are <strong>immutable</strong> and
- * <strong>thread-safe</strong>. This means all methods on this class
- * which return {@code BigRational} create new instances, which makes
- * the following code usage incorrect.</p>
+ * <strong>thread-safe</strong>. This means {@code BigRational}s can be freely
+ * shared between many threads and used concurrently safely.
+ * However this also means that all methods in this class which return
+ * {@code BigRational} create new instances, which makes the following code
+ * usage incorrect.</p>
  *
  * <pre>
  *   BigRational rational = BigRational.valueOf(1, 2);

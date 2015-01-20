@@ -1,12 +1,8 @@
-package uk.org.bluettduncanj;
+package uk.co.bluettduncanj;
 
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -14,8 +10,8 @@ public class BigRationalTest {
 
   /**
    * A test class used to verify that {@code BigRational}
-   * does not accept BigInteger subclass instances for any
-   * of its noted method parameters.
+   * does not accept instances of untrusted BigInteger subclasses
+   * for any of its appropriate method parameters.
    */
   private static class BigIntegerImpostor extends BigInteger {
     public BigIntegerImpostor(String val) {
@@ -30,17 +26,17 @@ public class BigRationalTest {
 
   @Test
   public void testDenominator() throws Exception {
-    BigRational tenth = BigRational.of(BigInteger.ONE, BigInteger.TEN);
+    BigRational tenth = BigRational.valueOf(BigInteger.ONE, BigInteger.TEN);
     assertEquals("Denominator has mutated", BigInteger.TEN,
         tenth.denominator());
   }
 
   @Test
   public void testEquals() throws Exception {
-    BigRational half = BigRational.of(1, 2);
-    BigRational twoQuarters = BigRational.of(2, 4);
-    BigRational threeSixths = BigRational.of(3, 6);
-    BigRational eightFifths = BigRational.of(8, 5);
+    BigRational half = BigRational.valueOf(1, 2);
+    BigRational twoQuarters = BigRational.valueOf(2, 4);
+    BigRational threeSixths = BigRational.valueOf(3, 6);
+    BigRational eightFifths = BigRational.valueOf(8, 5);
 
     // Test reflexivity of equals()
     assertEquals("Not equal to itself", half, half);
@@ -71,8 +67,8 @@ public class BigRationalTest {
 
   @Test
   public void testHashCode() throws Exception {
-    BigRational half = BigRational.of(1, 2);
-    BigRational twoQuarters = BigRational.of(2, 4);
+    BigRational half = BigRational.valueOf(1, 2);
+    BigRational twoQuarters = BigRational.valueOf(2, 4);
 
     assertTrue("Hash codes retrieved twice from same object are not the same",
         half.hashCode() == half.hashCode());
@@ -82,7 +78,7 @@ public class BigRationalTest {
 
   @Test
   public void testNumerator() throws Exception {
-    BigRational tenth = BigRational.of(BigInteger.ONE, BigInteger.TEN);
+    BigRational tenth = BigRational.valueOf(BigInteger.ONE, BigInteger.TEN);
     assertEquals("Numerator has mutated", BigInteger.ONE, tenth.numerator());
   }
 
@@ -96,7 +92,7 @@ public class BigRationalTest {
     fail("Not yet implemented.");
 
     final BigIntegerImpostor impostorInteger = new BigIntegerImpostor("1");
-    final BigRational impostorRational = BigRational.of(impostorInteger);
+    final BigRational impostorRational = BigRational.valueOf(impostorInteger);
     Class<?> numeratorClass = impostorRational.numerator().getClass();
     assertTrue("Does not protect against impostor subclasses",
         numeratorClass.equals(BigInteger.class));
@@ -108,7 +104,7 @@ public class BigRationalTest {
 
     final BigIntegerImpostor impostorInteger = new BigIntegerImpostor("1");
     final BigRational impostorRational =
-        BigRational.of(impostorInteger, impostorInteger);
+        BigRational.valueOf(impostorInteger, impostorInteger);
     Class<?> numeratorClass = impostorRational.numerator().getClass();
     Class<?> denominatorClass = impostorRational.denominator().getClass();
     assertTrue("Does not protect against impostor subclasses",

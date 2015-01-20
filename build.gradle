@@ -11,7 +11,8 @@ repositories {
 }
 
 dependencies {
-    compile 'net.jcip:jcip-annotations:1.0'
+    compile 'net.jcip:jcip-annotations:1.0',
+            'com.google.code.findbugs:jsr305:3.0.0'
     testCompile 'junit:junit:4.11'
 }
 
