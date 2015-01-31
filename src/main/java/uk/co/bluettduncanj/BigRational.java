@@ -12,10 +12,13 @@ import java.util.Objects;
 import static java.util.Objects.requireNonNull;
 
 /**
- * <p>An immutable, unlimited-size fraction.</p>
+ * <p>A representation of an immutable, unlimited-size fraction. A {@code BigRational} consists
+ * of a {@code BigInteger} numerator and {@code BigInteger} denominator.</p>
  *
- * <p>This class does not have any public constructors - instead it has
- * static factory methods. To give two examples:</p>
+ * <h1>Construction</h1>
+ * <p>This class does not have any public constructors. Instead, it provides
+ * static factory methods, which are used instead for constructing {@code BigRational}s. The static
+ * factory methods in this class use the name {@code valueOf}. To give two examples:</p>
  * <pre>
  *   BigRational half = BigRational.valueOf(1, 2);  // -&gt; 1/2
  *   BigRational twoThirds = BigRational.valueOf(
@@ -23,31 +26,44 @@ import static java.util.Objects.requireNonNull;
  *       BigInteger.valueOf(3));                    // -&gt; 2/3
  * </pre>
  *
- * <p>{@code BigRational} objects are automatically simplified when created (this means {@code 2/4}
- * becomes {@code 1/2}). Also the signs of their numerator and denominator are inverted if the
- * denominator is negative (this means {@code 1/-5} becomes {@code -1/5}). It is invalid for
- * a denominator to be zero.</p>
+ * <h1>Invariants</h1>
+ * <p>A {@code BigRational} object is automatically simplified when it is instantiated (for
+ * example, {@code 2/4} becomes {@code 1/2}).</p>
+ *
+ * <p>The sign values of its numerator and denominator are inverted if the denominator is less
+ * than zero (for example, {@code 1/-5} becomes {@code -1/5}).</p>
+ *
+ * <p>If its numerator is zero, the denominator will automatically be set to one (for example,
+ * {@code 0/5} becomes {@code 0/1}).</p>
+ *
+ * <p>Denominators cannot be zero; unless noted otherwise, passing zero to the denominator
+ * parameter of any static factory method will cause an {@code IllegalArgumentException} to be
+ * thrown.</p>
+ *
+ * <p>Unless otherwise noted, passing {@code null} to any method will cause a {@code
+ * NullPointerException} to be thrown.</p>
  *
  * <p>{@code BigRational} objects are <strong>immutable</strong> and
  * <strong>thread-safe</strong>. This means {@code BigRational}s can be freely
- * and safely shared between many threads and used concurrently.
- * However this also means that all methods in this class which return
- * {@code BigRational} create new instances, which means calling these methods
- * won't change the source object. For example:</p>
+ * and safely shared between many threads and used as {@code public static final} fields. It is
+ * also safe to use {@code BigRational} objects as locks, as they do not use their intristic
+ * locks for synchronization.</p>
+ *
+ * <h1>Caveat</h1>
+ * <p>As {@code BigRational}s are immutable, all methods in this class which return
+ * {@code BigRational} either create new instances or return {@code this} unmodified, which
+ * means the following usage does not do anything.</p>
  * <pre>
  *   BigRational rational = BigRational.valueOf(1, 2);
  *   rational.add(BigRational.valueOf(1, 5));  // Don't do this!
  *   System.out.println(rational);             // -&gt; 1/2
  * </pre>
- * <p>To achieve the desired effect, do the following instead.</p>
+ * <p>To achieve the desired effect, use the following idiom instead.</p>
  * <pre>
  *   BigRational rational = BigRational.valueOf(1, 2);
  *   rational = rational.add(BigRational.valueOf(1, 5));  // Correct usage
  *   System.out.println(rational);                        // -&gt; 7/10
  * </pre>
- *
- * <p>Unless otherwise noted, passing {@code null} to any of the methods of a {@code
- * BigRational} will cause a {@code NullPointerException} to be thrown.</p>
  *
  * @author Jonathan Bluett-Duncan
  */
@@ -80,18 +96,24 @@ public final class BigRational extends Number implements Comparable<BigRational>
     BigInteger num = safeInstance(requireNonNull(numerator, "Numerator is null"));
     BigInteger den = safeInstance(requireNonNull(denominator, "Denominator is null"));
 
+    NormalizedResult normalized = normalize(num, den);
+    this.numerator = normalized.numerator;
+    this.denominator = normalized.numerator;
+  }
+
+  private NormalizedResult normalize(BigInteger num, BigInteger den) {
     if (den.equals(BigInteger.ZERO)) {
       throw new IllegalArgumentException("Denominator is zero");
     }
 
+    // Optimisation; used mainly for consistency when numerator is zero
     if (num.equals(BigInteger.ZERO)) {
-      // Optimisation
       num = BigInteger.ZERO;
       den = BigInteger.ONE;
     } else {
 
       // Reduce the rational to prevent excessive memory usage
-      BigInteger gcd = num.gcd(den);
+      final BigInteger gcd = num.gcd(den);
       num = num.divide(gcd);
       den = den.divide(gcd);
 
@@ -102,8 +124,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
       }
     }
 
-    this.numerator = num;
-    this.denominator = den;
+    return new NormalizedResult(num, den);
   }
 
   /**
@@ -121,7 +142,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
    * {@code BigInteger}, otherwise {@code val} itself
    */
   private static BigInteger safeInstance(BigInteger val) {
-    // Implemented as per Joshua Bloch's example in Effective Java 2nd Edition, p.
+    // Implemented as per Joshua Bloch's example in Effective Java 2nd Edition, p. 79
     if (val.getClass() != BigInteger.class) {
       return new BigInteger(val.toByteArray());
     }
@@ -375,16 +396,16 @@ public final class BigRational extends Number implements Comparable<BigRational>
    */
   @Override
   public String toString() {
-    return (denominator.equals(BigInteger.ONE))
-        ? numerator.toString()
-        : numerator.toString() + "/" + denominator.toString();
+    return denominator.equals(BigInteger.ONE)
+           ? String.valueOf(numerator)
+           : numerator + "/" +  denominator;
   }
 
   /**
    * Unsupported serialization method.
    *
    * @param stream the object input stream
-   * @throws InvalidObjectException always, because this serialization method is unsupported
+   * @throws InvalidObjectException because this serialization method is unsupported
    */
   private void readObject(ObjectInputStream stream) throws InvalidObjectException {
     throw new InvalidObjectException("Proxy required");
@@ -392,6 +413,16 @@ public final class BigRational extends Number implements Comparable<BigRational>
 
   private Object writeReplace() {
     return new SerializationProxy(this);
+  }
+
+  private static class NormalizedResult {
+    public final BigInteger numerator;
+    public final BigInteger denominator;
+
+    NormalizedResult(final BigInteger numerator, final BigInteger denominator) {
+      this.numerator = numerator;
+      this.denominator = denominator;
+    }
   }
 
   /**
@@ -402,7 +433,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
     private final BigInteger numerator;
     private final BigInteger denominator;
 
-    SerializationProxy(BigRational value) {
+    SerializationProxy(final BigRational value) {
       numerator = value.numerator;
       denominator = value.denominator;
     }
