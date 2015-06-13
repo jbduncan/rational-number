@@ -1,7 +1,6 @@
 package uk.co.bluettduncanj;
 
-import net.jcip.annotations.Immutable;
-
+import javax.annotation.concurrent.Immutable;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -16,9 +15,11 @@ import static java.util.Objects.requireNonNull;
  * of a {@code BigInteger} numerator and {@code BigInteger} denominator.</p>
  *
  * <h1>Construction</h1>
- * <p>This class does not have any public constructors. Instead, it provides
- * static factory methods, which are used instead for constructing {@code BigRational}s. The static
- * factory methods in this class use the name {@code valueOf}. To give two examples:</p>
+ * <p>This class does not have any public constructors. Instead, it provides static factory
+ * methods, which are used instead for constructing {@code BigRational}s. The static factory
+ * methods in this class use the name {@code valueOf} for consistency with
+ * {@link java.math.BigInteger BigInteger} and {@link java.math.BigDecimal BigDecimal}. To give
+ * two examples:</p>
  * <pre>
  *   BigRational half = BigRational.valueOf(1, 2);  // -&gt; 1/2
  *   BigRational twoThirds = BigRational.valueOf(
@@ -50,15 +51,15 @@ import static java.util.Objects.requireNonNull;
  * locks for synchronization.</p>
  *
  * <h1>Caveat</h1>
- * <p>As {@code BigRational}s are immutable, all methods in this class which return
- * {@code BigRational} either create new instances or return {@code this} unmodified, which
+ * <p>As {@code BigRational}s are immutable, all methods in this class which return {@code
+ * BigRational} either create new instances or return {@code this} unmodified, which
  * means the following usage does not do anything.</p>
  * <pre>
  *   BigRational rational = BigRational.valueOf(1, 2);
  *   rational.add(BigRational.valueOf(1, 5));  // Don't do this!
  *   System.out.println(rational);             // -&gt; 1/2
  * </pre>
- * <p>To achieve the desired effect, use the following idiom instead.</p>
+ * <p>To achieve the desired effect, do as follows instead.</p>
  * <pre>
  *   BigRational rational = BigRational.valueOf(1, 2);
  *   rational = rational.add(BigRational.valueOf(1, 5));  // Correct usage
@@ -101,32 +102,6 @@ public final class BigRational extends Number implements Comparable<BigRational>
     this.denominator = normalized.numerator;
   }
 
-  private NormalizedResult normalize(BigInteger num, BigInteger den) {
-    if (den.equals(BigInteger.ZERO)) {
-      throw new IllegalArgumentException("Denominator is zero");
-    }
-
-    // Optimisation; used mainly for consistency when numerator is zero
-    if (num.equals(BigInteger.ZERO)) {
-      num = BigInteger.ZERO;
-      den = BigInteger.ONE;
-    } else {
-
-      // Reduce the rational to prevent excessive memory usage
-      final BigInteger gcd = num.gcd(den);
-      num = num.divide(gcd);
-      den = den.divide(gcd);
-
-      // Ensure the denominator is always positive
-      if (den.signum() < 0) {
-        num = num.negate();
-        den = den.negate();
-      }
-    }
-
-    return new NormalizedResult(num, den);
-  }
-
   /**
    * <p>Defensively copies a new {@code BigInteger} if {@code val} is an untrusted
    * subclass of {@code BigInteger}, otherwise returns {@code val}.</p>
@@ -147,6 +122,32 @@ public final class BigRational extends Number implements Comparable<BigRational>
       return new BigInteger(val.toByteArray());
     }
     return val;
+  }
+
+  private NormalizedResult normalize(BigInteger num, BigInteger den) {
+    if (den.equals(BigInteger.ZERO)) {
+      throw new IllegalArgumentException("Denominator is zero");
+    }
+
+    // Optimisation; used mainly for consistency when numerator is zero.
+    if (num.equals(BigInteger.ZERO)) {
+      num = BigInteger.ZERO;
+      den = BigInteger.ONE;
+    } else {
+
+      // Reduce the rational to prevent excessive memory usage.
+      final BigInteger gcd = num.gcd(den);
+      num = num.divide(gcd);
+      den = den.divide(gcd);
+
+      // Ensure the denominator is always positive.
+      if (den.signum() < 0) {
+        num = num.negate();
+        den = den.negate();
+      }
+    }
+
+    return new NormalizedResult(num, den);
   }
 
   public static BigRational valueOf(BigDecimal value) {
@@ -175,6 +176,22 @@ public final class BigRational extends Number implements Comparable<BigRational>
   }
 
   /**
+   * Compares two BigRational objects, {@code a} and {@code b}, which are
+   * assumed to have unequal denominators.
+   *
+   * @param a A {@code BigRational} object
+   * @param b A {@code BigRational} object to compare against {@code a}
+   * @return a negative integer, zero, or a positive integer as {@code a} is
+   * less than, equal to, or greater than {@code b}
+   */
+  private static int compareWithUnequalDenominators(BigRational a, BigRational b) {
+    // Cross multiply the numerators of a and b with each other before comparing them.
+    BigInteger aNum = a.numerator.multiply(b.denominator);
+    BigInteger bNum = b.numerator.multiply(a.denominator);
+    return aNum.compareTo(bNum);
+  }
+
+  /**
    * <p>Returns the value of the specified number as a {@code byte},
    * which may involve rounding or truncation.</p>
    *
@@ -193,37 +210,17 @@ public final class BigRational extends Number implements Comparable<BigRational>
   }
 
   /**
-   * @param value the object to be compared
+   * @param that the object to be compared
    * @return a negative integer, zero, or a positive integer as this object
    * is less than, equal to, or greater than the specified object
    * @throws NullPointerException if value is {@code null}
    */
   @Override
-  public int compareTo(BigRational value) {
-    if (this == value) {
-      return 0;
-    }
-    return (denominator.compareTo(value.denominator) == 0)
-        ? numerator.compareTo(value.numerator)
-        : compareWithUnequalDenominators(this, value);
-  }
-
-  /**
-   * Compares two BigRational objects, {@code a} and {@code b}, which are
-   * assumed to have unequal denominators.
-   *
-   * @param a A {@code BigRational} object
-   * @param b A {@code BigRational} object to compare against {@code a}
-   * @return a negative integer, zero, or a positive integer as {@code a} is
-   * less than, equal to, or greater than {@code b}
-   */
-  private static int compareWithUnequalDenominators(BigRational a, BigRational b) {
-    // Cross multiply the numerators of a and b with each other before comparing them.
-    BigInteger aNum = a.numerator.multiply(b.denominator);
-    BigInteger bNum = b.numerator.multiply(a.denominator);
-    return aNum.compareTo(bNum);
-
-
+  public int compareTo(BigRational that) {
+    // Cross multiply before comparing numerators.
+    BigInteger thisNum = numerator.multiply(that.denominator);
+    BigInteger thatNum = that.numerator.multiply(denominator);
+    return thisNum.compareTo(thatNum);
   }
 
   /**
@@ -389,8 +386,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
    * {@code BigRational} numbers, but {@code "1.5/2.3"}, {@code "1/-2"} and
    * {@code "-1/-2"} are not.</p>
    *
-   * <p>This representation is compatible with the
-   * {@link BigRational#valueOf(String)} <em>static factory method</em>.</p>
+   * <p>This representation is compatible with {@link BigRational#valueOf(String)}.</p>
    *
    * @return the string representation of {@code this}
    */
@@ -398,7 +394,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
   public String toString() {
     return denominator.equals(BigInteger.ONE)
            ? String.valueOf(numerator)
-           : numerator + "/" +  denominator;
+        : numerator + "/" + denominator;
   }
 
   /**
